@@ -25,7 +25,7 @@
       width: 400px;
       height: 500px;
       border: 2px solid #333;
-      background: #f0f0f0;
+      background: #f3f3f3;
       overflow: hidden;
     }
     #pelota {
@@ -35,7 +35,7 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: radial-gradient(circle at 10px 10px, #ff5555, #aa0000);
+      background: radial-gradient(circle at 10px 10px, #ff4444, #aa0000);
     }
     #energia {
       margin-top: 15px;
@@ -88,8 +88,8 @@
 
       if (altura <= 0) {
         altura = 0;
-        velocidad = -velocidad * 0.7;  // pierde 30% de energía en cada rebote
-        energia *= 0.7;
+        velocidad = -velocidad * 0.85;  // pierde 30% de energía en cada rebote
+        energia *= 0.85;
 
         if (Math.abs(velocidad) < 0.5) {
           return; // se detiene cuando casi no rebota
