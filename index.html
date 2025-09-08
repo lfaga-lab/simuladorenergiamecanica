@@ -108,14 +108,8 @@
       height: 40px;
       border-radius: 50%;
     }
-    #pelota1 {
-      left: 30%;
-      background: radial-gradient(circle at 10px 10px, #ff5555, #aa0000);
-    }
-    #pelota2 {
-      left: 70%;
-      background: radial-gradient(circle at 10px 10px, #55ff55, #00aa00);
-    }
+    #pelota1 { left: 30%; background: radial-gradient(circle at 10px 10px, #ff5555, #aa0000); }
+    #pelota2 { left: 70%; background: radial-gradient(circle at 10px 10px, #55ff55, #00aa00); }
 
     #energia {
       margin-top: 5px;
@@ -136,9 +130,7 @@
       width: 100%;
       max-width: 620px;
     }
-    @media (min-width: 600px){
-      #graficos { grid-template-columns: 1fr 1fr; }
-    }
+    @media (min-width: 600px){ #graficos { grid-template-columns: 1fr 1fr; } }
     .grafico-card {
       background: #fff;
       border-radius: 8px;
@@ -156,10 +148,53 @@
       align-items: center;
       gap: 6px;
     }
-    canvas {
-      width: 100% !important;
-      height: 170px !important;
+    canvas { width: 100% !important; height: 170px !important; }
+
+    /* Modal */
+    #modalOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
     }
+    #modalCard {
+      background: #ffffff;
+      max-width: 520px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    #modalHeader {
+      background: #004466;
+      color: #fff;
+      padding: 10px 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #modalBody {
+      padding: 12px 14px;
+      line-height: 1.55;
+      font-size: 0.98rem;
+    }
+    #modalBody .pel-row {
+      display: flex; align-items: center; gap: 8px; margin: 6px 0;
+    }
+    #modalFooter {
+      padding: 10px 14px;
+      display: flex; gap: 8px; justify-content: flex-end;
+      background: #f5f7fa;
+    }
+    .btn-secondary {
+      background: #6b7280; color: #fff;
+    }
+    .btn-secondary:hover { background: #5b6470; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -184,6 +219,7 @@
     </fieldset>
 
     <button onclick="iniciarSimulacion()">Iniciar</button>
+    <button id="pauseBtn" onclick="togglePausa()">Pausar</button>
   </div>
 
   <div id="contenedor">
@@ -210,12 +246,38 @@
     </div>
   </div>
 
+  <!-- Modal -->
+  <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div id="modalCard">
+      <div id="modalHeader">
+        <span id="modalTitle">Estado actual de energías</span>
+        <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
+      </div>
+      <div id="modalBody">
+        <div class="pel-row">
+          <span class="dot red"></span><strong>Pelota 1 (roja)</strong>
+        </div>
+        <div id="infoP1"></div>
+        <hr>
+        <div class="pel-row">
+          <span class="dot green"></span><strong>Pelota 2 (verde)</strong>
+        </div>
+        <div id="infoP2"></div>
+      </div>
+      <div id="modalFooter">
+        <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
+        <button onclick="reanudarDesdeModal()">Reanudar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const g = 9.8;       // gravedad (m/s²)
     const escala = 50;   // pixeles por metro
     let animacion;
     let pelotas = [];
     let energiaTexto;
+    let paused = false;
 
     // Dos gráficos separados
     let chart1, chart2, chartData1, chartData2;
@@ -223,6 +285,9 @@
 
     function iniciarSimulacion() {
       cancelAnimationFrame(animacion);
+      paused = false;
+      document.getElementById('pauseBtn').textContent = 'Pausar';
+      document.getElementById('modalOverlay').style.display = 'none';
 
       const altura1 = parseFloat(document.getElementById("altura1").value);
       const masa1   = parseFloat(document.getElementById("masa1").value);
@@ -304,7 +369,7 @@
       const cin2 = 0.5 * pelotas[1].masa * pelotas[1].velocidad * pelotas[1].velocidad;
       const mec2 = pot2 + cin2;
 
-      // Totales (opcional, se mantienen como en tu versión original)
+      // Totales (como referencia)
       const potT = pot1 + pot2;
       const cinT = cin1 + cin2;
       const mecT = mec1 + mec2;
@@ -322,6 +387,8 @@
     }
 
     function animar() {
+      if (paused) return;
+
       pelotas.forEach(p => {
         p.velocidad -= g * 0.02;      // Δt = 0.02s
         p.altura += p.velocidad * 0.02;
@@ -339,6 +406,55 @@
 
       actualizarEnergia();
       animacion = requestAnimationFrame(animar);
+    }
+
+    function togglePausa() {
+      paused = !paused;
+      const btn = document.getElementById('pauseBtn');
+      if (paused) {
+        btn.textContent = 'Reanudar';
+        mostrarModalConEnergias();
+      } else {
+        document.getElementById('modalOverlay').style.display = 'none';
+        animar(); // retoma animación
+      }
+    }
+
+    function reanudarDesdeModal() {
+      paused = false;
+      document.getElementById('pauseBtn').textContent = 'Pausar';
+      document.getElementById('modalOverlay').style.display = 'none';
+      animar();
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      // permanece en pausa
+    }
+
+    function mostrarModalConEnergias() {
+      // Calcula energías actuales (sin modificar nada)
+      const pot1 = pelotas[0].masa * g * pelotas[0].altura;
+      const cin1 = 0.5 * pelotas[0].masa * pelotas[0].velocidad * pelotas[0].velocidad;
+      const mec1 = pot1 + cin1;
+
+      const pot2 = pelotas[1].masa * g * pelotas[1].altura;
+      const cin2 = 0.5 * pelotas[1].masa * pelotas[1].velocidad * pelotas[1].velocidad;
+      const mec2 = pot2 + cin2;
+
+      const fmt = (x) => x.toFixed(2);
+
+      document.getElementById('infoP1').innerHTML =
+        `EPOT: <strong>${fmt(pot1)}</strong> J &nbsp;|&nbsp; ` +
+        `ECIN: <strong>${fmt(cin1)}</strong> J &nbsp;|&nbsp; ` +
+        `EMEC: <strong>${fmt(mec1)}</strong> J`;
+
+      document.getElementById('infoP2').innerHTML =
+        `EPOT: <strong>${fmt(pot2)}</strong> J &nbsp;|&nbsp; ` +
+        `ECIN: <strong>${fmt(cin2)}</strong> J &nbsp;|&nbsp; ` +
+        `EMEC: <strong>${fmt(mec2)}</strong> J`;
+
+      document.getElementById('modalOverlay').style.display = 'flex';
     }
   </script>
 </body>
