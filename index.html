@@ -27,14 +27,40 @@
       margin: 10px;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
       justify-content: center;
+      align-items: center;
     }
+    fieldset {
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 10px;
+      padding: 8px 10px 10px;
+      min-width: 260px;
+    }
+    legend {
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 1px #000;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    }
+    .dot.red { background: #ff4d4d; }
+    .dot.green { background: #32cd32; }
+
     label {
       font-size: 0.9rem;
       font-weight: bold;
       color: #fff;
       text-shadow: 1px 1px 1px #000;
+      margin-right: 4px;
     }
     input, button {
       padding: 6px 10px;
@@ -43,8 +69,9 @@
       font-size: 1rem;
     }
     input {
-      width: 60px;
+      width: 70px;
       text-align: center;
+      margin-right: 8px;
     }
     button {
       background: #ff6600;
@@ -53,22 +80,21 @@
       cursor: pointer;
       box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
-    button:hover {
-      background: #e65c00;
-    }
+    button:hover { background: #e65c00; }
+
     #contenedor {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
       width: 100%;
-      max-width: 480px;
+      max-width: 620px;
       padding: 10px;
     }
     #simulacion {
       position: relative;
       width: 100%;
-      max-width: 360px;
+      max-width: 480px;
       height: 400px;
       border: 2px solid #333;
       background: #fafafa;
@@ -90,6 +116,7 @@
       left: 70%;
       background: radial-gradient(circle at 10px 10px, #55ff55, #00aa00);
     }
+
     #energia {
       margin-top: 5px;
       font-weight: bold;
@@ -99,15 +126,39 @@
       padding: 8px;
       border-radius: 6px;
       box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+      max-width: 480px;
     }
-    #grafico {
-      width: 100% !important;
-      max-width: 320px !important;
-      height: 180px !important;
+
+    #graficos {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 620px;
+    }
+    @media (min-width: 600px){
+      #graficos { grid-template-columns: 1fr 1fr; }
+    }
+    .grafico-card {
       background: #fff;
       border-radius: 8px;
-      padding: 4px;
+      padding: 6px;
       box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+      height: 210px;
+      display: flex;
+      flex-direction: column;
+    }
+    .grafico-titulo {
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin: 2px 4px 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 170px !important;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -116,15 +167,21 @@
   <h1>Simulación de Rebote de Dos Pelotas</h1>
 
   <div id="controls">
-    <label>Altura 1 (m):</label>
-    <input type="number" id="altura1" value="5" min="1" max="20">
-    <label>Masa 1 (kg):</label>
-    <input type="number" id="masa1" value="1" min="0.1" step="0.1">
+    <fieldset>
+      <legend><span class="dot red"></span> Pelota 1 (roja)</legend>
+      <label for="altura1">Altura (m):</label>
+      <input type="number" id="altura1" value="5" min="1" max="20">
+      <label for="masa1">Masa (kg):</label>
+      <input type="number" id="masa1" value="1" min="0.1" step="0.1">
+    </fieldset>
 
-    <label>Altura 2 (m):</label>
-    <input type="number" id="altura2" value="8" min="1" max="20">
-    <label>Masa 2 (kg):</label>
-    <input type="number" id="masa2" value="0.5" min="0.1" step="0.1">
+    <fieldset>
+      <legend><span class="dot green"></span> Pelota 2 (verde)</legend>
+      <label for="altura2">Altura (m):</label>
+      <input type="number" id="altura2" value="8" min="1" max="20">
+      <label for="masa2">Masa (kg):</label>
+      <input type="number" id="masa2" value="0.5" min="0.1" step="0.1">
+    </fieldset>
 
     <button onclick="iniciarSimulacion()">Iniciar</button>
   </div>
@@ -136,11 +193,21 @@
     </div>
 
     <div id="energia">
-      Energía Potencial: - <br>
-      Energía Cinética: - <br>
-      Energía Mecánica Total: -
+      Energía Potencial (total): - <br>
+      Energía Cinética (total): - <br>
+      Energía Mecánica Total (suma): -
     </div>
-    <canvas id="grafico"></canvas>
+
+    <div id="graficos">
+      <div class="grafico-card">
+        <div class="grafico-titulo"><span class="dot red"></span> Energías — Pelota 1 (roja)</div>
+        <canvas id="grafico1"></canvas>
+      </div>
+      <div class="grafico-card">
+        <div class="grafico-titulo"><span class="dot green"></span> Energías — Pelota 2 (verde)</div>
+        <canvas id="grafico2"></canvas>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -149,8 +216,10 @@
     let animacion;
     let pelotas = [];
     let energiaTexto;
-    let chart, chartData;
-    let maxEnergia = 0;
+
+    // Dos gráficos separados
+    let chart1, chart2, chartData1, chartData2;
+    let maxEnergia1 = 0, maxEnergia2 = 0;
 
     function iniciarSimulacion() {
       cancelAnimationFrame(animacion);
@@ -165,74 +234,103 @@
         { altura: altura2, velocidad: 0, masa: masa2, elem: document.getElementById("pelota2") }
       ];
 
-      maxEnergia = Math.max(
-        masa1 * g * altura1,
-        masa2 * g * altura2
-      );
+      // Escalas máximas independientes por pelota
+      maxEnergia1 = masa1 * g * altura1;
+      maxEnergia2 = masa2 * g * altura2;
 
       energiaTexto = document.getElementById("energia");
 
-      inicializarGrafico();
-      actualizarEnergia();
+      inicializarGraficos();
+      actualizarEnergia(); // pinta estado inicial
       animar();
     }
 
-    function inicializarGrafico() {
-      const ctx = document.getElementById("grafico").getContext("2d");
-      if (chart) chart.destroy();
-      chartData = {
+    function inicializarGraficos() {
+      const ctx1 = document.getElementById("grafico1").getContext("2d");
+      const ctx2 = document.getElementById("grafico2").getContext("2d");
+
+      if (chart1) chart1.destroy();
+      if (chart2) chart2.destroy();
+
+      chartData1 = {
         labels: ["Energía Potencial", "Energía Cinética", "Energía Mecánica"],
         datasets: [{
-          label: "Energías (J)",
+          label: "Pelota 1 (J)",
           data: [0, 0, 0],
           backgroundColor: ["#33cc33", "#3399ff", "#ff9933"]
         }]
       };
-      chart = new Chart(ctx, {
+      chartData2 = {
+        labels: ["Energía Potencial", "Energía Cinética", "Energía Mecánica"],
+        datasets: [{
+          label: "Pelota 2 (J)",
+          data: [0, 0, 0],
+          backgroundColor: ["#33cc33", "#3399ff", "#ff9933"]
+        }]
+      };
+
+      chart1 = new Chart(ctx1, {
         type: "bar",
-        data: chartData,
+        data: chartData1,
         options: {
           animation: false,
           responsive: true,
           maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true, max: maxEnergia }
-          },
-          plugins: {
-            legend: { display: false }
-          }
+          scales: { y: { beginAtZero: true, max: maxEnergia1 } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      chart2 = new Chart(ctx2, {
+        type: "bar",
+        data: chartData2,
+        options: {
+          animation: false,
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, max: maxEnergia2 } },
+          plugins: { legend: { display: false } }
         }
       });
     }
 
     function actualizarEnergia() {
-      let energiaPot = 0, energiaCin = 0;
+      // Energías por pelota
+      const pot1 = pelotas[0].masa * g * pelotas[0].altura;
+      const cin1 = 0.5 * pelotas[0].masa * pelotas[0].velocidad * pelotas[0].velocidad;
+      const mec1 = pot1 + cin1;
 
-      pelotas.forEach(p => {
-        energiaPot += p.masa * g * p.altura;
-        energiaCin += 0.5 * p.masa * p.velocidad * p.velocidad;
-      });
+      const pot2 = pelotas[1].masa * g * pelotas[1].altura;
+      const cin2 = 0.5 * pelotas[1].masa * pelotas[1].velocidad * pelotas[1].velocidad;
+      const mec2 = pot2 + cin2;
 
-      const energiaMec = energiaPot + energiaCin;
+      // Totales (opcional, se mantienen como en tu versión original)
+      const potT = pot1 + pot2;
+      const cinT = cin1 + cin2;
+      const mecT = mec1 + mec2;
 
-      energiaTexto.innerHTML = "Energía Potencial: " + energiaPot.toFixed(2) + " J" +
-                               "<br>Energía Cinética: " + energiaCin.toFixed(2) + " J" +
-                               "<br>Energía Mecánica Total: " + energiaMec.toFixed(2) + " J";
+      energiaTexto.innerHTML = "Energía Potencial (total): " + potT.toFixed(2) + " J" +
+                               "<br>Energía Cinética (total): " + cinT.toFixed(2) + " J" +
+                               "<br>Energía Mecánica Total (suma): " + mecT.toFixed(2) + " J";
 
-      chartData.datasets[0].data = [energiaPot, energiaCin, energiaMec];
-      chart.update();
+      // Actualiza cada gráfico por separado
+      chartData1.datasets[0].data = [pot1, cin1, mec1];
+      chart1.update();
+
+      chartData2.datasets[0].data = [pot2, cin2, mec2];
+      chart2.update();
     }
 
     function animar() {
       pelotas.forEach(p => {
-        p.velocidad -= g * 0.02;
+        p.velocidad -= g * 0.02;      // Δt = 0.02s
         p.altura += p.velocidad * 0.02;
 
         if (p.altura <= 0) {
           p.altura = 0;
-          p.velocidad = -p.velocidad * 0.7;
+          p.velocidad = -p.velocidad * 0.7;  // 30% de pérdida por rebote
           if (Math.abs(p.velocidad) < 0.5) {
-            p.velocidad = 0;
+            p.velocidad = 0; // se detiene cuando es muy chico el rebote
           }
         }
 
