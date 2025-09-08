@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulación Rebote de Pelota</title>
+  <title>Simulación Rebote de Pelotas</title>
   <style>
     body {
       display: flex;
@@ -75,15 +75,20 @@
       overflow: hidden;
       border-radius: 10px;
     }
-    #pelota {
+    .pelota {
       position: absolute;
       bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
       width: 40px;
       height: 40px;
       border-radius: 50%;
+    }
+    #pelota1 {
+      left: 30%;
       background: radial-gradient(circle at 10px 10px, #ff5555, #aa0000);
+    }
+    #pelota2 {
+      left: 70%;
+      background: radial-gradient(circle at 10px 10px, #55ff55, #00aa00);
     }
     #energia {
       margin-top: 5px;
@@ -108,7 +113,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <h1>Simulación de Rebote de Pelota</h1>
+  <h1>Simulación de Rebote de Dos Pelotas</h1>
 
   <div id="controls">
     <label for="altura">Altura (m):</label>
@@ -120,7 +125,8 @@
 
   <div id="contenedor">
     <div id="simulacion">
-      <div id="pelota"></div>
+      <div id="pelota1" class="pelota"></div>
+      <div id="pelota2" class="pelota"></div>
     </div>
 
     <div id="energia">
@@ -134,21 +140,25 @@
   <script>
     const g = 9.8;       // gravedad (m/s²)
     const escala = 50;   // pixeles por metro
-    let animacion, alturaInicial, masa, altura, velocidad, pelota, energiaTexto;
+    let animacion;
+    let pelotas = [];
+    let energiaTexto;
     let chart, chartData;
     let maxEnergia = 0;
 
     function iniciarSimulacion() {
       cancelAnimationFrame(animacion);
 
-      alturaInicial = parseFloat(document.getElementById("altura").value);
-      masa = parseFloat(document.getElementById("masa").value);
-      altura = alturaInicial;
-      velocidad = 0;
+      const alturaInicial = parseFloat(document.getElementById("altura").value);
+      const masa = parseFloat(document.getElementById("masa").value);
 
-      maxEnergia = masa * g * alturaInicial; // fijamos escala máxima al inicio
+      pelotas = [
+        { altura: alturaInicial, velocidad: 0, masa, elem: document.getElementById("pelota1") },
+        { altura: alturaInicial, velocidad: 0, masa, elem: document.getElementById("pelota2") }
+      ];
 
-      pelota = document.getElementById("pelota");
+      maxEnergia = masa * g * alturaInicial; // escala máxima
+
       energiaTexto = document.getElementById("energia");
 
       inicializarGrafico();
@@ -185,8 +195,13 @@
     }
 
     function actualizarEnergia() {
-      const energiaPot = masa * g * altura;
-      const energiaCin = 0.5 * masa * velocidad * velocidad;
+      let energiaPot = 0, energiaCin = 0;
+
+      pelotas.forEach(p => {
+        energiaPot += p.masa * g * p.altura;
+        energiaCin += 0.5 * p.masa * p.velocidad * p.velocidad;
+      });
+
       const energiaMec = energiaPot + energiaCin;
 
       energiaTexto.innerHTML = "Energía Potencial: " + energiaPot.toFixed(2) + " J" +
@@ -198,22 +213,22 @@
     }
 
     function animar() {
-      velocidad -= g * 0.02;  // Δt = 0.02s
-      altura += velocidad * 0.02;
+      pelotas.forEach(p => {
+        p.velocidad -= g * 0.02;
+        p.altura += p.velocidad * 0.02;
 
-      if (altura <= 0) {
-        altura = 0;
-        velocidad = -velocidad * 0.7;  // pierde 30% de energía en cada rebote
-
-        if (Math.abs(velocidad) < 0.5) {
-          actualizarEnergia();
-          return; // se detiene cuando casi no rebota
+        if (p.altura <= 0) {
+          p.altura = 0;
+          p.velocidad = -p.velocidad * 0.7;
+          if (Math.abs(p.velocidad) < 0.5) {
+            p.velocidad = 0;
+          }
         }
-      }
 
-      pelota.style.bottom = (altura * escala) + "px";
+        p.elem.style.bottom = (p.altura * escala) + "px";
+      });
+
       actualizarEnergia();
-
       animacion = requestAnimationFrame(animar);
     }
   </script>
