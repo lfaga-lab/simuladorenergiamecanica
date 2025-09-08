@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulación Rebote de Pelota</title>
   <style>
     body {
@@ -9,65 +10,133 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
-      background: linear-gradient(to top, #cceeff, #ffffff);
+      background: linear-gradient(to top, #004466, #e6f7ff);
       font-family: Arial, sans-serif;
+      color: #000;
     }
     h1 {
-      margin-top: 20px;
+      margin: 10px;
+      font-size: 1.4rem;
+      text-align: center;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
     }
     #controls {
-      margin: 20px;
+      margin: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    label {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 1px #000;
+    }
+    input, button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+    input {
+      width: 70px;
+      text-align: center;
+    }
+    button {
+      background: #ff6600;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+    button:hover {
+      background: #e65c00;
+    }
+    #contenedor {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      max-width: 480px;
+      padding: 10px;
     }
     #simulacion {
       position: relative;
-      width: 400px;
-      height: 500px;
+      width: 100%;
+      max-width: 360px;
+      height: 400px;
       border: 2px solid #333;
-      background: #f0f0f0;
+      background: #fafafa;
       overflow: hidden;
+      border-radius: 10px;
     }
     #pelota {
       position: absolute;
       bottom: 0;
-      left: 180px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 40px;
       height: 40px;
       border-radius: 50%;
       background: radial-gradient(circle at 10px 10px, #ff5555, #aa0000);
     }
     #energia {
-      margin-top: 15px;
+      margin-top: 5px;
       font-weight: bold;
       text-align: center;
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.8);
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+    }
+    #grafico {
+      width: 100% !important;
+      max-width: 320px !important;
+      height: 180px !important;
+      background: #fff;
+      border-radius: 8px;
+      padding: 4px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <h1>Simulación de Rebote de Pelota</h1>
 
   <div id="controls">
-    <label for="altura">Altura inicial (m): </label>
+    <label for="altura">Altura (m):</label>
     <input type="number" id="altura" value="5" min="1" max="20">
-    <label for="masa">Masa (kg): </label>
+    <label for="masa">Masa (kg):</label>
     <input type="number" id="masa" value="1" min="0.1" step="0.1">
     <button onclick="iniciarSimulacion()">Iniciar</button>
   </div>
 
-  <div id="simulacion">
-    <div id="pelota"></div>
-  </div>
+  <div id="contenedor">
+    <div id="simulacion">
+      <div id="pelota"></div>
+    </div>
 
-  <div id="energia">
-    Energía Potencial: - <br>
-    Energía Cinética: -
+    <div id="energia">
+      Energía Potencial: - <br>
+      Energía Cinética: - <br>
+      Energía Mecánica Total: -
+    </div>
+    <canvas id="grafico"></canvas>
   </div>
 
   <script>
     const g = 9.8;       // gravedad (m/s²)
     const escala = 50;   // pixeles por metro
     let animacion, alturaInicial, masa, altura, velocidad, pelota, energiaTexto;
+    let chart, chartData;
+    let maxEnergia = 0;
 
     function iniciarSimulacion() {
       cancelAnimationFrame(animacion);
@@ -77,18 +146,55 @@
       altura = alturaInicial;
       velocidad = 0;
 
+      maxEnergia = masa * g * alturaInicial; // fijamos escala máxima al inicio
+
       pelota = document.getElementById("pelota");
       energiaTexto = document.getElementById("energia");
 
+      inicializarGrafico();
       actualizarEnergia();
       animar();
+    }
+
+    function inicializarGrafico() {
+      const ctx = document.getElementById("grafico").getContext("2d");
+      if (chart) chart.destroy();
+      chartData = {
+        labels: ["Energía Potencial", "Energía Cinética", "Energía Mecánica"],
+        datasets: [{
+          label: "Energías (J)",
+          data: [0, 0, 0],
+          backgroundColor: ["#33cc33", "#3399ff", "#ff9933"]
+        }]
+      };
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: chartData,
+        options: {
+          animation: false,
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, max: maxEnergia }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
     }
 
     function actualizarEnergia() {
       const energiaPot = masa * g * altura;
       const energiaCin = 0.5 * masa * velocidad * velocidad;
+      const energiaMec = energiaPot + energiaCin;
+
       energiaTexto.innerHTML = "Energía Potencial: " + energiaPot.toFixed(2) + " J" +
-                               "<br>Energía Cinética: " + energiaCin.toFixed(2) + " J";
+                               "<br>Energía Cinética: " + energiaCin.toFixed(2) + " J" +
+                               "<br>Energía Mecánica Total: " + energiaMec.toFixed(2) + " J";
+
+      chartData.datasets[0].data = [energiaPot, energiaCin, energiaMec];
+      chart.update();
     }
 
     function animar() {
